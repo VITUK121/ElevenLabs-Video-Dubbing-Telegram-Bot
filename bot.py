@@ -17,41 +17,37 @@ class Ai_Bot:
         self.dp.include_router(self.router)
 
     async def download_video_handler(self, message: types.Message):
-        """
-        Handles incoming video messages and downloads the video file.
-        """
         if message.video:
-            # Get the file_id of the video
             file_id = message.video.file_id
-            
-            # Inform the user that the download is starting
             await message.reply("Downloading your video...")
             
             try:
-                # Get file details including file_path
                 file: File = await self.bot.get_file(file_id)
                 file_path = file.file_path
-                # Define the destination path with a desired filename
-                # Using the original filename is often best
                 destination = path.join(self.downloads_folder, message.video.file_name or f"{file_id}.mp4")
                 
-                # Download the file to the specified destination
                 await self.bot.download_file(file_path, destination)
+                await message.reply(f"Video downloaded. Starting processing...")
                 
-                await message.reply(f"Video downloaded successfully to: {destination}")
-                # Get the end file path
+                # --- ВИПРАВЛЕННЯ ТУТ ---
                 video_file_path = await self.dub_agent.start_dubbing(destination)
-                # Sending video to user
-                await self.send_result_to_user(message.from_user.id, video_file_path, destination)
-
+                
+                if video_file_path:
+                    # Якщо файл успішно створено
+                    await self.send_result_to_user(message.from_user.id, video_file_path, destination)
+                else:
+                    # Якщо повернувся None (ключі закінчились або помилка)
+                    await message.reply("❌ Не вдалося створити даббінг. Закінчилися кредити на всіх акаунтах або сталася помилка.")
+                    # Видаляємо вхідний файл, щоб не засмічувати сервер
+                    if path.exists(destination):
+                        remove(destination)
 
             except Exception as e:
-                await message.reply(f"An error occurred during download: {e}")
-                # Note: Bots have a 20MB limit for files downloaded via the standard API.
-                # For larger files, you might need a different approach (e.g., using a local Bot API server).
-
+                await message.reply(f"An error occurred: {e}")
+                # Для відладки виводимо повний трейсбек у консоль
+                print(f"CRITICAL BOT ERROR: {e}")
         else:
-            await message.reply("This is not a video message or something went wrong.")
+            await message.reply("This is not a video message.")
             
     async def send_result_to_user(self, chat_id, file_path, file_input_path):
         try:
