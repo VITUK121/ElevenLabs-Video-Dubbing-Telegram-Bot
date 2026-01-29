@@ -1,3 +1,4 @@
+from video_downloader import SocialDownloader
 from bot import Ai_Bot
 from elevenlabs_agent import Dubbing
 

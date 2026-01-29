@@ -1,0 +1,6 @@
+instaloader
+elevenlabs
+aiofiles
+aiogram
+yt_dlp
+dotenv
